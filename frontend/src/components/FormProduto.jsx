@@ -1,67 +1,125 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-// 1. Correção: Desestruturando a prop { aoCadastrar }
-export default function FormProduto({ aoCadastrar }) {
+function FormProduto({ aoCadastrar, aoAlterar, produtoEmEdicao, aoCancelarEdicao}) {
   const [nome, setNome] = useState("");
   const [descricao, setDescricao] = useState("");
   const [preco, setPreco] = useState("");
 
-  function enviarFormulario(evento) {
-    evento.preventDefault();
+  const [erro, setErro] = useState("");
 
-    
-    if (!nome.trim() || !preco) return;
+  useEffect(() => {
+    if (produtoEmEdicao) {
+      setNome(produtoEmEdicao.nome);
+      setDescricao(produtoEmEdicao.descricao || "");
+      setPreco(produtoEmEdicao.preco);
+    }
+  }, [produtoEmEdicao]);
 
-    
-    aoCadastrar({
-      nome: nome.trim(),
-      descricao: descricao.trim(), 
-      preco: Number(preco),
-    });
-
-    
+  function limparFormulario() {
     setNome("");
     setDescricao("");
     setPreco("");
+    setErro("");
+  }
+
+  function enviarFormulario(evento) {
+    evento.preventDefault();
+
+    if (!nome.trim()) {
+      setErro("Digite o nome do produto.");
+      return;
+    }
+
+    if (!preco || Number(preco) <= 0) {
+      setErro("O preço deve ser maior que zero");
+      return;
+    }
+
+    setErro("");
+
+    aoCadastrar({
+      nome: nome.trim(),
+      descricao: descricao.trim(),
+      preco: Number(preco),
+    });
+
+    if (produtoEmEdicao) {
+      aoAlterar({
+        id: produtoEmEdicao.id,
+        ...produto,
+      });
+    } else {
+      aoCadastrar(produto);
+    }
+
+    limparFormulario();
+  }
+
+  function cancelarEdicao() {
+    limparFormulario();
+    aoCancelarEdicao();
   }
 
   return (
     <form className="formulario" onSubmit={enviarFormulario}>
-      <h2>Novo produto</h2>
+      <div className="titulo-formulario">
 
-      <label>
-        Nome
-        <input
-          type="text"
-          value={nome}
-          onChange={(evento) => setNome(evento.target.value)}
-          placeholder="Ex.: Teclado"
-        />
-      </label>
+        <div>
 
-      <label>
-        Descrição
-        <input
-          type="text"
-          value={descricao}
-          onChange={(evento) => setDescricao(evento.target.value)}
-          placeholder="Descrição do Produto"
-        />
-      </label>
+          <span className="tag">{produtoEmEdicao ? "EDITANDO ITEM":"NOVO ITEM"}</span>
+          <h2>{produtoEmEdicao ? "Alterar Produto":"Cadastrar produto"}</h2>
+        </div>
+        <span className="status-dot">ONLINE</span>
+      </div>
 
-      <label>
-        Preço
-        <input
-          type="number"
-          min="0"
-          step="0.01"
-          value={preco}
-          onChange={(evento) => setPreco(evento.target.value)}
-          placeholder="0,00"
-        />
-      </label>
+      <div className="campos-formulario">
+        <label>
+          Nome
+          <input
+            type="text"
+            value={nome}
+            onChange={(evento) => setNome(evento.target.value)}
+            placeholder="Ex.: Teclado"
+          />
+        </label>
 
-      <button type="submit">Cadastrar Produto</button>
+        <label>
+          Descrição
+          <input
+            type="text"
+            value={descricao}
+            onChange={(evento) => setDescricao(evento.target.value)}
+            placeholder="Descrição do produto"
+          />
+        </label>
+
+        <label>
+          Preço
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={preco}
+            onChange={(evento) => setPreco(evento.target.value)}
+            placeholder="0,00"
+          />
+        </label>
+      </div>
+
+      <div className="acoes-formulario">
+        <button type="submit">
+          {produtoEmEdicao ? "Salvar alterações":"+ Cadastrar produto"}
+        </button>
+
+        {produtoEmEdicao && (
+          <button type = "button" className="botao-cancelar" onClick={cancelarEdicao}>cancelar
+          </button>
+        )}
+      </div>
+
+      {erro && <p className="mensagem-erro">{erro}/</p>}
     </form>
   );
 }
+
+export default FormProduto;
